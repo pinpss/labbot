@@ -4,6 +4,7 @@ decorator function to convert mergerfs path to base (for speed)
 from .utilities import unwrap_fullargspec
 from boltons.funcutils import wraps
 import xattr
+import os
 
 
 def mfsdec(func, *mf_dirs):
@@ -37,9 +38,11 @@ def mfsdec(func, *mf_dirs):
         nargs_l = []
         for ak, av in zip(func_args, args):
             if ak in mf_dirs:
+                print(ak, av, "pre")
                 loc = xattr.getxattr(av, "user.mergerfs.basepath")
-                loc = os.path.basename(loc.decode("utf-8"))
+                loc = loc.decode("utf-8")
                 av = os.path.join(loc, os.path.basename(av))
+                print(ak, av, "post")
                 nargs_l.append(av)
             else:
                 nargs_l.append(av)
