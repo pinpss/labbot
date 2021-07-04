@@ -10,7 +10,8 @@ import itertools
 import time
 
 
-def iterdec(func, *iter_keys, temp_keys=[], iter_kwds={}, n_jobs=1, wait=0):
+def iterdec(func, *iter_keys, temp_keys=[], zip_keys=[], iter_kwds={},
+            n_jobs=1, wait=0):
     """converts a single run of a function into many
 
     Parameters
@@ -21,6 +22,8 @@ def iterdec(func, *iter_keys, temp_keys=[], iter_kwds={}, n_jobs=1, wait=0):
         list of func inputs which we iterate over
     temp_keys : iterable
         iterable of func kwds which we need to template
+    zip_keys : iterable
+        iterable of func kwds which are treated as the same iteration
     iter_kwds : dict
         dictionary mapping template inputs to list of values
     n_jobs : scalar
@@ -48,7 +51,8 @@ def iterdec(func, *iter_keys, temp_keys=[], iter_kwds={}, n_jobs=1, wait=0):
 
         func_kwds = genkwds(func, *args, **kwds)
         n_iter_kwds = {**{k: func_kwds[k] for k in iter_keys}, **iter_kwds}
-        gen_tasks = iter_task(func_kwds, iter_keys, temp_keys, n_iter_kwds)
+        gen_tasks = iter_task(func_kwds, iter_keys, temp_keys, zip_keys,
+                              n_iter_kwds)
 
         # offset function for wait
         ofn = lambda i: i - n_jobs * int((i * 1.) / n_jobs)
@@ -77,7 +81,7 @@ def _waitfn(ind, func, wait, *args, **kwds):
     return func(*args, **kwds)
 
 
-def iter_task(func_kwds, iter_keys, temp_keys, iter_kwds):
+def iter_task(func_kwds, iter_keys, temp_keys, zip_keys, iter_kwds):
     """convert kwds into list of kwds based on iter_keys
 
     Parameters
@@ -88,6 +92,8 @@ def iter_task(func_kwds, iter_keys, temp_keys, iter_kwds):
         list of func inputs which we iterate over
     temp_keys : iterable
         iterable of func kwds which we need to template
+    zip_keys : iterable
+        iterable of func kwds which are treated as the same iteration
     iter_kwds : dict
         dictionary mapping template inputs to list of values
 
@@ -97,9 +103,31 @@ def iter_task(func_kwds, iter_keys, temp_keys, iter_kwds):
         key words for current iterable element
     """
 
-    iter_k = list(iter_kwds.keys())
-    iter_v = list(iter_kwds.values())
-    iter_prods = list(itertools.product(*iter_v))
+    # split zip keys to zip
+    f_iter_kwds = {}
+    z_iter_kwds = {}
+    for k in iter_kwds:
+        if k in zip_keys:
+            z_iter_kwds[k] = iter_kwds[k]
+        else:
+            f_iter_kwds[k] = iter_kwds[k]
+
+    z_iter_k = list(z_iter_kwds.keys())
+    z_iter_v = list(z_iter_kwds.values())
+    z_iter_v = list(zip(*z_iter_v))
+    f_iter_k = list(f_iter_kwds.keys())
+    f_iter_v = list(f_iter_kwds.values())
+    iter_k = z_iter_k + f_iter_k
+
+    # build all possible products of baseline kwds
+    f_iter_prods = list(itertools.product(*f_iter_v))
+
+    # handle additional cases for zipped kwds
+    iter_prods = []
+    for zv in z_iter_v:
+        for p in f_iter_prods:
+            np = list(zv) + list(p)
+            iter_prods.append(np)
 
     for prod in iter_prods:
 
