@@ -91,34 +91,18 @@ This will create a separate directory for each `dname`/`p` pair and write the co
 
 #### zip
 
+By providing an additional list of `zip_keys` we can change the desired behavior of `iterdec` to treat a specified subset of the iterable inputs as pairs in the same iteration:
+
 ```python
-import labbot as lb
-import pandas as pd
-import numpy as np
-import os
-
-
-def tfunc(N, p, out_dir):
-
-    df = pd.DataFrame(np.random.normal(size=(N, p)))
-    df.to_csv(os.path.join(out_dir, "test.csv"),
-              index=False)
-
-out_dir = "/home/labbot/{{dname}}_{{p}}"
-dname_l = ["foo", "bar", "baz"]
-p_l = [5, 10, 20]
-
 dec = lb.compose(lb.cachedec,
                  lb.dpart(lb.datalocdec, "out_dir"),
                  lb.dpart(lb.iterdec, "p",
                           temp_keys=["out_dir"],
-                          zip_kwds=["p", "dname"],
+                          zip_keys=["p", "dname"],
                           iter_kwds={"dname": dname_l}))
-
-dec(tfunc)(100, p=p_l, out_dir=out_dir)
 ```
 
-This will instead zip the arguments, key-words, or iterator key-words provided in `zip_kwds` and treat them as tuples of inputs instead.
+This will instead zip the arguments, key-words, or iterator key-words provided in `zip_keys` and treat them as tuples of inputs instead.
 
 The result will be that this version of the code will only create directories, `foo_5`, `bar_10`, and `baz_20`.
 
@@ -131,7 +115,7 @@ dec = lb.compose(lb.cachedec,
                  lb.dpart(lb.datalocdec, "out_dir"),
                  lb.dpart(lb.iterdec, "p", n_jobs=2,
                           temp_keys=["out_dir"],
-                          zip_kwds=["p", "dname"],
+                          zip_keys=["p", "dname"],
                           iter_kwds={"dname": dname_l}))
 ```
 
@@ -142,10 +126,10 @@ dec = lb.compose(lb.cachedec,
 ```python
 dec = lb.compose(lb.cachedec,
                  lb.dpart(lb.datalocdec, "out_dir"),
-                 lb.dpart(errordec, retries=2, retry_delay=10,
+                 lb.dpart(lb.errordec, retries=2, retry_delay=10,
                  lb.dpart(lb.iterdec, "p",
                           temp_keys=["out_dir"],
-                          zip_kwds=["p", "dname"],
+                          zip_keys=["p", "dname"],
                           iter_kwds={"dname": dname_l}))
 ```
 
@@ -156,22 +140,11 @@ In this example, the decorator will retry the underlying function twice with a d
 `profiledec` is an easy tool for tracking how long different parts of a function run.  It uses the line_profiler package to record the runtime of each line of a given function and writes the result to a timestamped file in the source directory.
 
 ```python
-import labbot as lb
-import pandas as pd
-import numpy as np
-import os
-
-
-def tfunc(N, p, out_dir):
-
-    df = pd.DataFrame(np.random.normal(size=(N, p)))
-    df.to_csv(os.path.join(out_dir, "test.csv"),
-              index=False)
-
 dec = lb.compose(lb.profiledec,
-                 lb.dpart(lb.datalocdec, "out_dir"))
-
-out_dir = "/home/labbot/test"
-
-dec(tfunc)(100, 10, out_dir)
+                 lb.dpart(lb.datalocdec, "out_dir"),
+                 lb.dpart(lb.errordec, retries=2, retry_delay=10,
+                 lb.dpart(lb.iterdec, "p",
+                          temp_keys=["out_dir"],
+                          zip_keys=["p", "dname"],
+                          iter_kwds={"dname": dname_l}))
 ```
