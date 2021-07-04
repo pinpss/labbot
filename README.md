@@ -5,6 +5,8 @@ labbot consists of a collection of decorators which support common patterns in r
 
 ## Usage
 
+Labbot introduces a series of decorators which can be applied to any Python function to handle common additional functionality.  The following example shows the standard pattern for using labbot:
+
 ```python
 import labbot as lb
 
@@ -20,12 +22,15 @@ dec = lb.compose(lb.cachedec,
 dec(tfunc)(10, 20, c=[1, 2, 3, 4])
 ```
 
+`cachedec` and `iterdec` are both decorators from labbot.  `compose` takes a list of decorators and combines them into one.  `dpart` creates a partial version of the decorator using additional inputs.
+
 ### cachedec
 
-```python
-```
+`cachedec` allows the user to record whether a particular set of params and code have been called with this function before.  It uses the joblib memory module to log each instance of the function run and can skip repeated instances where the code and params match.
 
 ### datalocdec
+
+`datalocdec` can create the provided directory path if it doesn't exist and records a log of the directory path similar to `cachedec`.
 
 ```python
 import labbot as lb
@@ -50,7 +55,11 @@ dec(tfunc)(100, 10, out_dir)
 
 ### iterdec
 
+`iterdec` is one of the most useful decorators provided by labbot.  It can allow the user to rerun a function with different parameter inputs automatically.  In the example above, `tfunc` will be run four times, once with each of the provided values for `c`.
+
 #### jinja2
+
+`iterdec` also has some useful functionality for templating inputs and file paths.  Inputs can be jinja2 templates and `iterdec` will use other available inputs to fill in the templates:
 
 ```python
 import labbot as lb
@@ -113,12 +122,38 @@ This will instead zip the arguments, key-words, or iterator key-words provided i
 
 The result will be that this version of the code will only create directories, `foo_5`, `bar_10`, and `baz_20`.
 
-### errordec
+#### joblib
+
+Finally, `iterdec` also allows easy support for parallel runs of jobs.  Just drop the number of `n_jobs` in for the number of parallel workers and joblib will handle the rest:
 
 ```python
+dec = lb.compose(lb.cachedec,
+                 lb.dpart(lb.datalocdec, "out_dir"),
+                 lb.dpart(lb.iterdec, "p", n_jobs=2,
+                          temp_keys=["out_dir"],
+                          zip_kwds=["p", "dname"],
+                          iter_kwds={"dname": dname_l}))
 ```
 
+### errordec
+
+`errordec` can rerun failed code however many times a user desires:
+
+```python
+dec = lb.compose(lb.cachedec,
+                 lb.dpart(lb.datalocdec, "out_dir"),
+                 lb.dpart(errordec, retries=2, retry_delay=10,
+                 lb.dpart(lb.iterdec, "p",
+                          temp_keys=["out_dir"],
+                          zip_kwds=["p", "dname"],
+                          iter_kwds={"dname": dname_l}))
+```
+
+In this example, the decorator will retry the underlying function twice with a delay of 10 seconds between each attempt.  This can be extremely useful when writing code which interacts with online or unstable resources.
+
 ### profiledec
+
+`profiledec` is an easy tool for tracking how long different parts of a function run.  It uses the line_profiler package to record the runtime of each line of a given function and writes the result to a timestamped file in the source directory.
 
 ```python
 import labbot as lb
