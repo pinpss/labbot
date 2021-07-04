@@ -3,6 +3,7 @@ from .template import templatedec
 from .profile import profiledec
 from .dataloc import datalocdec
 from .iterable import iterdec
+from .mergerfs import mfsdec
 from .compose import compose
 from .errors import errordec
 from .cache import cachedec
