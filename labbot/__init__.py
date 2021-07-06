@@ -6,6 +6,7 @@ from .iterable import iterdec
 from .compose import compose
 from .errors import errordec
 from .mergerfs import mfsdec
+from .email import emaildec
 from .cache import cachedec
 from .partial import dpart
 from .lock import lockdec
