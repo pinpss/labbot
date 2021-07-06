@@ -123,11 +123,14 @@ def iter_task(func_kwds, iter_keys, temp_keys, zip_keys, iter_kwds):
     f_iter_prods = list(itertools.product(*f_iter_v))
 
     # handle additional cases for zipped kwds
-    iter_prods = []
-    for zv in z_iter_v:
-        for p in f_iter_prods:
-            np = list(zv) + list(p)
-            iter_prods.append(np)
+    if len(z_iter_v) > 0:
+        iter_prods = []
+        for zv in z_iter_v:
+            for p in f_iter_prods:
+                np = list(zv) + list(p)
+                iter_prods.append(np)
+    else:
+        iter_prods = f_iter_prods
 
     for prod in iter_prods:
 
