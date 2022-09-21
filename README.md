@@ -148,3 +148,26 @@ dec = lb.compose(lb.profiledec,
                           zip_keys=["p", "dname"],
                           iter_kwds={"dname": dname_l}))
 ```
+
+### clidec
+
+`clidec` is a useful way to parameterize functions with command line arguments.  When it is added to the overall decorator it allows the users to pass in flags for various args and kwargs from the command line, for instance, if you add to your runscript:
+
+```python
+dec = lb.compose(lb.clidec)
+dec(foo)(iterations, chars)
+```
+
+```bash
+run runscript.py --iterations 100
+```
+
+Would run the `foo` with iterations set to 100.  Any txt after a flag is converted into a single string and then passed to literal eval, allowing inputs to be basic python types.  For instance,
+
+```bash
+run runscript.py --chars ["size", "value"]
+```
+
+Would pass in the variable `chars` into `foo` with a list of `"size"` and `"value"`.
+
+Note that `clidec` can also handle inputs that correspond to format inputs comparable to `iter_kwds` in `iterdec`.

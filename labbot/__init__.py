@@ -2,6 +2,7 @@ from .subprocess import subprocessdec
 from .template import templatedec
 from .profile import profiledec
 from .dataloc import datalocdec
+from .warnings import warndec
 from .iterable import iterdec
 from .compose import compose
 from .errors import errordec
